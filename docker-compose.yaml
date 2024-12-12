@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      POSTGRES_PASSWORD: ${PASS}
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "postgres"
+      POSTGRES_PORT: "5432"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - database:/var/lib/postgresql/data/pgdata
+
+  cache:
+    image: arm64v8/redis:7.4.1
+    command:
+      [
+        "redis-server",
+        "--maxmemory",
+        "4gb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    environment:
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${PASS}
+
+  queue:
+    image: arm64v8/rabbitmq:4.0.4
+
+  clip:
+    build:
+      context: ./clip
+    environment:
+      BUCKET_PATH: "./data"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_NAME: "postgres"
+      DB_USER: "postgres"
+      DB_PASS: ${PASS}
+      QUEUE_HOST: "queue"
+      QUEUE_PORT: "5672"
+      QUEUE_NAME: "image"
+    depends_on:
+      db:
+        condition: "service_healthy"
+    volumes:
+      - vision-seeker_bucket:/data
+
+  app:
+    build:
+      context: ./
+    environment:
+      BUCKET_PATH: "./data"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_NAME: "postgres"
+      DB_USER: "postgres"
+      DB_PASS: ${PASS}
+      QUEUE_HOST: "queue"
+      QUEUE_PORT: "5672"
+      QUEUE_NAME: "image"
+    depends_on:
+      db:
+        condition: "service_healthy"
+    volumes:
+      - vision-seeker_bucket:/data
+
+volumes:
+  database:
+  vision-seeker_bucket:
+    external: true
