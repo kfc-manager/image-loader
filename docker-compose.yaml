@@ -17,20 +17,6 @@ services:
     volumes:
       - database:/var/lib/postgresql/data/pgdata
 
-  cache:
-    image: arm64v8/redis:7.4.1
-    command:
-      [
-        "redis-server",
-        "--maxmemory",
-        "4gb",
-        "--maxmemory-policy",
-        "allkeys-lru",
-      ]
-    environment:
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${PASS}
-
   queue:
     image: arm64v8/rabbitmq:4.0.4
 
