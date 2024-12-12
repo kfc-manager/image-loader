@@ -24,7 +24,7 @@ services:
     build:
       context: ./clip
     environment:
-      BUCKET_PATH: "./data"
+      BUCKET_PATH: "../data"
       DB_HOST: "db"
       DB_PORT: "5432"
       DB_NAME: "postgres"
